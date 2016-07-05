@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="machineIDArray">
+        <item>Select Machine ID</item>
+        <item>SDK001-M001-01-0001a</item>
+        <item>SDK002-M002-02-0002a</item>
+        <item>SDK003-M003-03-0003a</item>
+        <item>SDK004-M004-04-0004a</item>
+        <item>SDK005-M005-05-0005a</item>
+        <item>SDK006-M006-06-0006a</item>
+        <item>SDK007-M007-07-0007a</item>
+        <item>SDK008-M008-08-0008a</item>
+        <item>SDK009-M009-09-0009a</item>
+        <item>SDK010-M010-10-0010a</item>
+    </string-array>
+    <string-array name="statusArray">
+        <item>Select Status Type</item>
+        <item>Warning</item>
+        <item>Critical</item>
+    </string-array>
+
+</resources>
