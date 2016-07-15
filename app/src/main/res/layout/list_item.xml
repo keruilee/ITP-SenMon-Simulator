@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <Switch
+        android:id="@+id/swEnableAddRecord"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MachineID"
+        android:textStyle="bold"
+        android:padding="10dp"
+        android:checked="true"
+        android:focusable="false"/>
+
+    <RadioGroup
+        android:id="@+id/radioState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/swEnableAddRecord"
+        android:layout_centerInParent="true"
+        android:paddingRight="10dp">
+
+        <RadioButton
+            android:id="@+id/radioOff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Off"
+            android:scaleX="0.8"
+            android:scaleY="0.8"
+            android:focusable="false"/>
+
+        <RadioButton
+            android:id="@+id/radioNormal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Normal"
+            android:checked="true"
+            android:scaleX="0.8"
+            android:scaleY="0.8"
+            android:focusable="false"/>
+
+        <RadioButton
+            android:id="@+id/radioWarning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Warning"
+            android:scaleX="0.8"
+            android:scaleY="0.8"
+            android:focusable="false"/>
+
+        <RadioButton
+            android:id="@+id/radioCritical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Critical"
+            android:scaleX="0.8"
+            android:scaleY="0.8"
+            android:focusable="false"/>
+
+    </RadioGroup>
+
+</RelativeLayout>
