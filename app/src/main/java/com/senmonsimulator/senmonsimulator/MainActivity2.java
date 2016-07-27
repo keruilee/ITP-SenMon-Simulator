@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.StrictMode;
+import android.renderscript.ScriptGroup;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -15,11 +16,16 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
@@ -33,6 +39,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -60,6 +67,7 @@ public class MainActivity2 extends AppCompatActivity {
 
     ArrayList<String> machineIDarray = new ArrayList();
     ArrayList<String> machineDatesArray = new ArrayList();
+    ArrayList<String> machineOffCheckArray = new ArrayList();
 
     CountDownTimer countdownTimer;
 
@@ -110,7 +118,7 @@ public class MainActivity2 extends AppCompatActivity {
         progressDialog = new ProgressDialog(this);
 
         // to get list of machine id and their dates
-        getCSVData();
+        getSQLData();
     }
 
 //    private void populateMachineID() {
@@ -164,6 +172,7 @@ public class MainActivity2 extends AppCompatActivity {
     }
 
     public void simulateAddRecord(){
+
         ArrayList<Boolean> addingEnabled = listAdapter.getAddingEnabled();
         ArrayList<Integer> statesSelected = listAdapter.getStatesSelected();
 
@@ -194,16 +203,39 @@ public class MainActivity2 extends AppCompatActivity {
                         break;
                 }
 
-                Date machineDate, timeAfterAnHour;
+                Date machineDate, timeAfterAnHour, currentDateTime, previousDateTime;
+                String newTime;
                 try {
                     machineDate = dateTimeFormatter.parse(machineDatesArray.get(i));
                     Calendar cal = Calendar.getInstance();
+                    Log.d("cal.getTime(): ", String.valueOf(cal.getTime()));
+                    Log.d("machineDate.getTime(): ", String.valueOf(machineDate));
+                    //Get current Date time
+                    currentDateTime = cal.getTime();
+                    String getCurrentDateTime = dateTimeFormatter.format(currentDateTime);
+                    String[] getCurrentDate = getCurrentDateTime.split(",");
+                    Log.d("getDateCurrent: ", getCurrentDate[0]);
                     cal.setTime(machineDate);
-                    cal.add(Calendar.HOUR, 1);
-                    timeAfterAnHour = cal.getTime();
+                    //Get previous Date time
+                    previousDateTime = cal.getTime();
+                    String getPreviousDateTime = dateTimeFormatter.format(previousDateTime);
+                    String[] getPreviousDate = getPreviousDateTime.split(",");
+                    Log.d("getDatePrevious: ", getPreviousDate[0]);
+                    //Check to see if machine happens to be off for 1 day or more, use current date and time
+                    //For testing purpose, cannot check to see if machine had been previously off and getting the new date time
+                    if(!getPreviousDate[0].equals(getCurrentDate[0])){
+                        newTime = getCurrentDateTime;
+                        machineDatesArray.set(i, getCurrentDateTime);
+                    }
+                    //Else, increment by 1 hour
+                    else{
+                        cal.add(Calendar.HOUR, 1);
+                        timeAfterAnHour = cal.getTime();
 
-                    String newTime = dateTimeFormatter.format(timeAfterAnHour);
-                    machineDatesArray.set(i, newTime);
+                        newTime = dateTimeFormatter.format(timeAfterAnHour);
+                        machineDatesArray.set(i, newTime);
+                    }
+
 
                     if(machineState == 0)           // machine is off, values all set to 0
                     {
@@ -226,26 +258,46 @@ public class MainActivity2 extends AppCompatActivity {
                         Hud = String.format("%.2f", Math.random() * (53.00 - 48.00) + 48.00);
                     }
 
-                    String record = newTime + "," + Vx + "," + Vy + "," + Vz + ","
-                            + Vtotal + "," + TC + "," + TS + "," + Hud;
+                    //Check to see if latest record is off state, and if machine is still in off state
+                    //do not add in anymore records
+                    Log.d("machineoffcheckarray: ", machineOffCheckArray.get(i));
+                    if(!(machineOffCheckArray.get(i).equals(Vy))){
 
-                    HttpParams httpParams = new BasicHttpParams();
-                    HttpConnectionParams.setConnectionTimeout(httpParams, 1000 * 30);
-                    HttpConnectionParams.setSoTimeout(httpParams, 1000 * 30);
-                    HttpClient client = new DefaultHttpClient(httpParams);
+                        //Overwrite the array with new value
+                        machineOffCheckArray.set(i, Vy);
 
-                    ArrayList<NameValuePair> dataToSend = new ArrayList<>();
-                    dataToSend.add(new BasicNameValuePair("record", record));
-                    dataToSend.add(new BasicNameValuePair("machine", machineIDarray.get(i)));
+                        String[]getNewDateTime = newTime.split(",");
 
-                    HttpPost post = new HttpPost("http://itpsenmon.net23.net/" + "addToCSV.php");
+                        try{
+                            JSONObject json = new JSONObject();
+                            json.put("machineID", machineIDarray.get(i));
+                            json.put("date", getNewDateTime[0]);
+                            json.put("time", getNewDateTime[1]);
+                            json.put("vx", Vx);
+                            json.put("vy", Vy);
+                            json.put("vz", Vz);
+                            json.put("vtotal", Vtotal);
+                            json.put("tc", TC);
+                            json.put("ts", TS);
+                            json.put("hud", Hud);
 
-                    try {
-                        post.setEntity(new UrlEncodedFormEntity(dataToSend));
-                        client.execute(post);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                            HttpParams httpParams = new BasicHttpParams();
+                            HttpConnectionParams.setConnectionTimeout(httpParams, 1000 * 30);
+                            HttpConnectionParams.setSoTimeout(httpParams, 1000 * 30);
+                            HttpClient client = new DefaultHttpClient(httpParams);
+
+                            String url = "http://itpsenmon.net23.net/" + "addToSQL.php";
+                            HttpPost request = new HttpPost(url);
+                            request.setEntity(new ByteArrayEntity(json.toString().getBytes("UTF8")));
+                            request.setHeader("json", json.toString());
+                            client.execute(request);
+                        }catch (Throwable t){
+                            Toast.makeText(this, "Request failed: " + t.toString(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+
                     }
+
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
@@ -279,13 +331,13 @@ public class MainActivity2 extends AppCompatActivity {
         a.execute();
     }
 
-    public void getCSVData() {
-        class GetCSVDataJSON extends AsyncTask<Void, Void, JSONObject> {
+    public void getSQLData() {
+        class GetSQLDataJSON extends AsyncTask<Void, Void, JSONObject> {
 
             URL encodedUrl;
             HttpURLConnection urlConnection = null;
 
-            String url = "http://itpsenmon.net23.net/readFromCSV.php";
+            String url = "http://itpsenmon.net23.net/readFromSQL.php";
 
             JSONObject responseObj;
 
@@ -298,6 +350,7 @@ public class MainActivity2 extends AppCompatActivity {
 
                 machineIDarray.clear();
                 machineDatesArray.clear();
+                machineOffCheckArray.clear();
             }
 
             @Override
@@ -337,36 +390,38 @@ public class MainActivity2 extends AppCompatActivity {
             @Override
             protected void onPostExecute(JSONObject result) {
                 super.onPostExecute(result);
-                getCSVRecords(result);
+                getSQLRecords(result);
                 listAdapter = new CustomListAdapter(currentActivity, R.layout.activity_main2, machineIDarray);
                 listView.setAdapter(listAdapter);
                 progressDialog.dismiss();
             }
         }
-        GetCSVDataJSON g = new GetCSVDataJSON();
+        GetSQLDataJSON g = new GetSQLDataJSON();
         g.execute();
     }
 
-    //Get the server CSV records
-    public void getCSVRecords(JSONObject jsonObj) {
+    //Get the server SQL records
+    public void getSQLRecords(JSONObject jsonObj) {
         try {
-            JSONArray serverCSVrecords = jsonObj.getJSONArray(TAG_RESULTS);
+            JSONArray serverSQLrecords = jsonObj.getJSONArray(TAG_RESULTS);
 
             String cleanupLatestRecords;
-            //remove all unwanted symbols and text
-            cleanupLatestRecords = serverCSVrecords.toString().replaceAll(",false]]", "").replace("[[", "").replace("[", "").replace("]]", "").replace("\"", "").replace("]", "");
-            //split different csv records, the ending of each csv record list is machineID.csv
-            String[] allCSVRecords = cleanupLatestRecords.split(".csv,");
-            String[] latestRecords;
 
-            //loop through each csv and get the latest records and split each field
-            for (String record : allCSVRecords) {
+            //remove all unwanted symbols and text
+            cleanupLatestRecords = serverSQLrecords.toString().replaceAll(",false]]", "").replace("[[", "").replace("[", "").replace("]]", "").replace("\"", "").replace("]", "");
+            //split different csv records, the ending of each csv record list is machineID.csv
+            String[] allSQLRecords = cleanupLatestRecords.split("split,");
+            String[] latestRecords;
+            Log.d("cleanuplatestrecords: ", cleanupLatestRecords);
+
+            //loop through and get the latest records. afterwhich, split each field
+            for (String record : allSQLRecords) {
                 latestRecords = record.split(",");
-                machineIDarray.add(latestRecords[10].replace(".csv",""));
-                latestRecords[0] = latestRecords[0].replace("\\", "");
+                machineIDarray.add(latestRecords[0]);
+                machineOffCheckArray.add(latestRecords[3]);
                 Date machineDateTime;
                 try {
-                    machineDateTime = dateTimeFormatter.parse(latestRecords[0] + "," + latestRecords[1]);
+                    machineDateTime = dateTimeFormatter.parse(latestRecords[1] + "," + latestRecords[2]);
                     machineDatesArray.add(dateTimeFormatter.format(machineDateTime));
                 } catch(ParseException e) {
                     machineDatesArray.add(dateTimeFormatter.format(new Date()));
