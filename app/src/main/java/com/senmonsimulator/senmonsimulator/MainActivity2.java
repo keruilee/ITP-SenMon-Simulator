@@ -48,6 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Random;
 
 
 public class MainActivity2 extends AppCompatActivity {
@@ -68,6 +69,7 @@ public class MainActivity2 extends AppCompatActivity {
     ArrayList<String> machineIDarray = new ArrayList();
     ArrayList<String> machineDatesArray = new ArrayList();
     ArrayList<String> machineOffCheckArray = new ArrayList();
+    ArrayList<Boolean> machineOffStatesArray = new ArrayList();
 
     CountDownTimer countdownTimer;
 
@@ -210,12 +212,18 @@ public class MainActivity2 extends AppCompatActivity {
                     Calendar cal = Calendar.getInstance();
                     cal.setTime(machineDate);
 
-                    cal.add(Calendar.HOUR, 1);
+                    if(machineOffStatesArray.get(i))            // machine is previously in off state
+                    {
+                        // add 1 day + (0-300) min + (0-300) seconds
+                        cal.add(Calendar.DATE, 1);
+                        cal.add(Calendar.MINUTE, new Random().nextInt(300));
+                        cal.add(Calendar.SECOND, new Random().nextInt(300));
+                    }
+                    else                                        // machine is previously in on state
+                        cal.add(Calendar.HOUR, 1);
                     timeAfterAnHour = cal.getTime();
 
                     newTime = dateTimeFormatter.format(timeAfterAnHour);
-                    machineDatesArray.set(i, newTime);
-
 
                     if(machineState == 0)           // machine is off, values all set to 0
                     {
@@ -226,6 +234,7 @@ public class MainActivity2 extends AppCompatActivity {
                         TC = "0";
                         TS = "0";
                         Hud = "0";
+                        machineOffStatesArray.set(i, true);         // save machine as off state
                     }
                     else                            // machine is not off, give real values
                     {
@@ -236,12 +245,16 @@ public class MainActivity2 extends AppCompatActivity {
                         TC = String.format("%.2f", Math.random() * (100.0 - 0) + 0);
                         TS = String.format("%.2f", Math.random() * (100.0 - 0) + 0);
                         Hud = String.format("%.2f", Math.random() * (53.00 - 48.00) + 48.00);
+                        machineOffStatesArray.set(i, false);       // save machine as on state
                     }
 
                     //Check to see if latest record is off state, and if machine is still in off state
                     //do not add in anymore records
                     Log.d("machineoffcheckarray: ", machineOffCheckArray.get(i));
+                    Log.e("JSON initial date/time", dateTimeFormatter.format(machineDate));
                     if(!(machineOffCheckArray.get(i).equals(Vy))){
+
+                        machineDatesArray.set(i, newTime);
 
                         //Overwrite the array with new value
                         machineOffCheckArray.set(i, Vy);
@@ -331,6 +344,7 @@ public class MainActivity2 extends AppCompatActivity {
                 machineIDarray.clear();
                 machineDatesArray.clear();
                 machineOffCheckArray.clear();
+                machineOffStatesArray.clear();
             }
 
             @Override
@@ -401,14 +415,18 @@ public class MainActivity2 extends AppCompatActivity {
                 machineOffCheckArray.add(latestRecords[3]);
                 Date machineDateTime;
                 try {
-                    machineDateTime = dateTimeFormatter.parse(latestRecords[1] + "," + latestRecords[2]);
+                    machineDateTime = dateTimeFormatter.parse(latestRecords[1].replace("\\", "") + "," + latestRecords[2]);
                     machineDatesArray.add(dateTimeFormatter.format(machineDateTime));
+                    if(latestRecords[6] == "0")
+                        machineOffStatesArray.add(true);
+                    else
+                        machineOffStatesArray.add(false);
                 } catch(ParseException e) {
                     machineDatesArray.add(dateTimeFormatter.format(new Date()));
                     e.printStackTrace();
                 }
             }
-
+            Log.e("OFF STATE ARRAY", String.valueOf(machineOffStatesArray.get(0)));
         } catch (JSONException e) {
             e.printStackTrace();
         }
