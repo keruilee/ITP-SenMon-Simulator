@@ -203,38 +203,18 @@ public class MainActivity2 extends AppCompatActivity {
                         break;
                 }
 
-                Date machineDate, timeAfterAnHour, currentDateTime, previousDateTime;
+                Date machineDate, timeAfterAnHour;
                 String newTime;
                 try {
                     machineDate = dateTimeFormatter.parse(machineDatesArray.get(i));
                     Calendar cal = Calendar.getInstance();
-                    Log.d("cal.getTime(): ", String.valueOf(cal.getTime()));
-                    Log.d("machineDate.getTime(): ", String.valueOf(machineDate));
-                    //Get current Date time
-                    currentDateTime = cal.getTime();
-                    String getCurrentDateTime = dateTimeFormatter.format(currentDateTime);
-                    String[] getCurrentDate = getCurrentDateTime.split(",");
-                    Log.d("getDateCurrent: ", getCurrentDate[0]);
                     cal.setTime(machineDate);
-                    //Get previous Date time
-                    previousDateTime = cal.getTime();
-                    String getPreviousDateTime = dateTimeFormatter.format(previousDateTime);
-                    String[] getPreviousDate = getPreviousDateTime.split(",");
-                    Log.d("getDatePrevious: ", getPreviousDate[0]);
-                    //Check to see if machine happens to be off for 1 day or more, use current date and time
-                    //For testing purpose, cannot check to see if machine had been previously off and getting the new date time
-                    if(!getPreviousDate[0].equals(getCurrentDate[0])){
-                        newTime = getCurrentDateTime;
-                        machineDatesArray.set(i, getCurrentDateTime);
-                    }
-                    //Else, increment by 1 hour
-                    else{
-                        cal.add(Calendar.HOUR, 1);
-                        timeAfterAnHour = cal.getTime();
 
-                        newTime = dateTimeFormatter.format(timeAfterAnHour);
-                        machineDatesArray.set(i, newTime);
-                    }
+                    cal.add(Calendar.HOUR, 1);
+                    timeAfterAnHour = cal.getTime();
+
+                    newTime = dateTimeFormatter.format(timeAfterAnHour);
+                    machineDatesArray.set(i, newTime);
 
 
                     if(machineState == 0)           // machine is off, values all set to 0
