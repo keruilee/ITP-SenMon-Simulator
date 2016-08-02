@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.StrictMode;
-import android.renderscript.ScriptGroup;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -18,16 +17,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -39,7 +32,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -93,8 +85,6 @@ public class MainActivity2 extends AppCompatActivity {
         btnTimer = (Button) findViewById(R.id.btnTimer);
         listView = (ListView) findViewById(R.id.list);
 
-        //populateMachineID();
-
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view,  int position, long id) {
                 listAdapter.notifyDataSetChanged();
@@ -123,21 +113,6 @@ public class MainActivity2 extends AppCompatActivity {
         getSQLData();
     }
 
-//    private void populateMachineID() {
-//        DecimalFormat twoDigits = new DecimalFormat("000");
-//        DecimalFormat threeDigits = new DecimalFormat("000");
-//        DecimalFormat fourDigits = new DecimalFormat("0000");
-//        for(int i = 1; i <= 10; i++) {
-//            String twoDigitsFormatted = twoDigits.format(i);
-//            String threeDigitsFormatted = threeDigits.format(i);
-//            String fourDigitsFormatted = fourDigits.format(i);
-//            machineIDarray.add("SDK" +threeDigitsFormatted
-//                                +"-M" +threeDigitsFormatted
-//                                +"-" +twoDigitsFormatted
-//                                +"-"+fourDigitsFormatted +"a");
-//        }
-//    }
-
     Runnable addRecordChecker = new Runnable() {
         @Override
         public void run() {
@@ -146,7 +121,7 @@ public class MainActivity2 extends AppCompatActivity {
                 countdownTimer = new CountDownTimer(mInterval,1000){
                     @Override
                     public void onTick(long millisUntilFinished) {
-                        timerDisplay = "Add record in: " + millisUntilFinished / 1000;
+                        timerDisplay = "Add records in: " + millisUntilFinished / 1000 +" sec";
                         textViewTimer.setText(timerDisplay);
                     }
                     @Override
@@ -184,6 +159,7 @@ public class MainActivity2 extends AppCompatActivity {
             //random machine inputs
             double lower = 0;
             double upper = 0;
+            double tempLower = 0, tempUpper = 0;
 
             if(addingEnabled.get(i)) {          // adding of records enabled
                 machineState = statesSelected.get(i);
@@ -193,15 +169,21 @@ public class MainActivity2 extends AppCompatActivity {
                         break;
                     case 1:             // normal
                         lower = 0.28;
-                        upper = 1.80;
+                        upper = 2.70;
+                        tempLower = 0;
+                        tempUpper = 50;
                         break;
                     case 2:             // warning
                         lower = 2.80;
-                        upper = 4.50;
+                        upper = 7.00;
+                        tempLower = 0;
+                        tempUpper = 70;
                         break;
                     case 3:             // critical
                         lower = 7.10;
                         upper = 45.90;
+                        tempLower = 0;
+                        tempUpper = 100;
                         break;
                 }
 
@@ -242,7 +224,7 @@ public class MainActivity2 extends AppCompatActivity {
                         Vy = String.format("%.2f", Math.random() * (upper - lower) + lower);
                         Vz = String.format("%.2f", Math.random() * (upper - lower) + lower);
                         Vtotal = String.format("%.2f", Math.random() * (upper - lower) + lower);
-                        TC = String.format("%.2f", Math.random() * (100.0 - 0) + 0);
+                        TC = String.format("%.2f", Math.random() * (tempUpper - tempLower) + tempLower);
                         TS = String.format("%.2f", Math.random() * (100.0 - 0) + 0);
                         Hud = String.format("%.2f", Math.random() * (53.00 - 48.00) + 48.00);
                         machineOffStatesArray.set(i, false);       // save machine as on state
@@ -307,6 +289,7 @@ public class MainActivity2 extends AppCompatActivity {
                 progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
                 progressDialog.setIndeterminate(false);
                 progressDialog.show();
+                progressDialog.setCancelable(false);
             }
 
             @Override
@@ -411,6 +394,11 @@ public class MainActivity2 extends AppCompatActivity {
             //loop through and get the latest records. afterwhich, split each field
             for (String record : allSQLRecords) {
                 latestRecords = record.split(",");
+                if(latestRecords.length < 10)
+                {
+                    newRecords();
+                    break;
+                }
                 machineIDarray.add(latestRecords[0]);
                 machineOffCheckArray.add(latestRecords[3]);
                 Date machineDateTime;
@@ -432,6 +420,13 @@ public class MainActivity2 extends AppCompatActivity {
         }
     }
 
-
-
+    private void newRecords() {
+        int numOfMachines = 8;
+        for(int i = 1; i <= numOfMachines; i++) {
+            machineDatesArray.add(dateTimeFormatter.format(new Date("01/01/2016,08:00:00")));
+            machineOffStatesArray.add(false);
+            machineIDarray.add(String.valueOf(i));
+            machineOffCheckArray.add("0");
+        }
+    }
 }

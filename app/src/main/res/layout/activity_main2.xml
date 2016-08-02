@@ -13,7 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/textViewTimer"
-        android:text="Adding record in 00:00:00"
+        android:text=""
         android:textSize="20dp"
         android:padding="10dp"/>
 
